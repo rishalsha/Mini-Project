@@ -1,0 +1,4 @@
+NAME              ID              SIZE      MODIFIED    
+ministral-3:3b    a48e77f25d79    3.0 GB    2 weeks ago    
+gemini-2.5-flash       a80c4f17acd5    2.0 GB    2 weeks ago    
+ministral-3:8b    77300ee7514e    6.0 GB    2 weeks ago    
