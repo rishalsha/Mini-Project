@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface JobRecommendationRepository extends JpaRepository<JobRecommendation, Long> {
     List<JobRecommendation> findByUser(User user);
+
+    void deleteByUser(User user);
 }

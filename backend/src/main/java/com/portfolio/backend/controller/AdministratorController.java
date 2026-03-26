@@ -6,12 +6,14 @@ import com.portfolio.backend.entity.Employer;
 import com.portfolio.backend.entity.User;
 import com.portfolio.backend.repository.AdministratorRepository;
 import com.portfolio.backend.repository.EmployerRepository;
+import com.portfolio.backend.repository.JobRecommendationRepository;
 import com.portfolio.backend.repository.PortfolioRepository;
 import com.portfolio.backend.repository.ResumeAnalysisRepository;
 import com.portfolio.backend.repository.UserRepository;
 import com.portfolio.backend.service.AdministratorService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.management.ManagementFactory;
@@ -34,6 +36,7 @@ public class AdministratorController {
     private final AdministratorRepository administratorRepository;
     private final UserRepository userRepository;
     private final EmployerRepository employerRepository;
+    private final JobRecommendationRepository jobRecommendationRepository;
     private final PortfolioRepository portfolioRepository;
     private final ResumeAnalysisRepository resumeAnalysisRepository;
 
@@ -42,12 +45,14 @@ public class AdministratorController {
             AdministratorRepository administratorRepository,
             UserRepository userRepository,
             EmployerRepository employerRepository,
+            JobRecommendationRepository jobRecommendationRepository,
             PortfolioRepository portfolioRepository,
             ResumeAnalysisRepository resumeAnalysisRepository) {
         this.administratorService = administratorService;
         this.administratorRepository = administratorRepository;
         this.userRepository = userRepository;
         this.employerRepository = employerRepository;
+        this.jobRecommendationRepository = jobRecommendationRepository;
         this.portfolioRepository = portfolioRepository;
         this.resumeAnalysisRepository = resumeAnalysisRepository;
     }
@@ -123,6 +128,7 @@ public class AdministratorController {
     }
 
     @DeleteMapping("/users/candidate/{id}")
+    @Transactional
     public ResponseEntity<?> deleteCandidate(@PathVariable Long id) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
@@ -130,6 +136,8 @@ public class AdministratorController {
         }
 
         User user = userOpt.get();
+        portfolioRepository.deleteByUser(user);
+        jobRecommendationRepository.deleteByUser(user);
         resumeAnalysisRepository.deleteByUser(user);
         userRepository.delete(user);
         return ResponseEntity.ok(Map.of("message", "Candidate deleted successfully"));

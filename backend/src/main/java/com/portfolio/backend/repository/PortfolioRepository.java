@@ -1,6 +1,7 @@
 package com.portfolio.backend.repository;
 
 import com.portfolio.backend.entity.Portfolio;
+import com.portfolio.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -24,4 +25,6 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     Optional<Portfolio> findLatestNonEmptyByEmail(@Param("email") String email);
 
     List<Portfolio> findByFullNameContainingIgnoreCase(String name);
+
+    void deleteByUser(User user);
 }
