@@ -413,7 +413,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 >
                   Back to login
                 </button>
-              ) : (
+              ) : isLogin && role === "administrator" ? null : (
                 <>
                   {isLogin
                     ? "Don't have an account?"
