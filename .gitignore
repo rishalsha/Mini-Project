@@ -7,19 +7,56 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependency directories
 node_modules
+
+# Build outputs
 dist
 dist-ssr
+coverage
+*.tsbuildinfo
+
+# Environment and local config
+.env
+.env.*
+backend/.env
+backend/.env.*
+!backend/.env.example
+!.env.example
 *.local
+
+# Runtime artifacts
+*.pid
+*.pid.lock
+*.seed
+
+# Uploads and generated user content
+uploads/
+backend/uploads/
+
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+
+# Package manager stores
+.npm/
+.pnpm-store/
+.yarn/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+.DS_Store?
+Thumbs.db
+*.tmp
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-backend/target
