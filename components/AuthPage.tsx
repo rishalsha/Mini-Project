@@ -363,7 +363,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
               )}
             </div>
 
-            {isLogin && role === "administrator" && (
+            {isLogin && role != "administrator" && (
               <div className="flex justify-end">
                 <button
                   type="button"
