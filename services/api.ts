@@ -1,6 +1,6 @@
 import { User, UserRole } from '../types';
 
-const RAW_API_BASE = (import.meta as any)?.env?.VITE_API_URL || '/api';
+const RAW_API_BASE = 'https://autofolioai.duckdns.org';
 
 // Normalize so request builders can safely append /api/... once.
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '').replace(/\/api$/, '');
