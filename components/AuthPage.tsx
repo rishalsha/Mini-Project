@@ -140,6 +140,8 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
         setError(`No ${role} account found with this email.`);
       } else if (status === 400) {
         setError("Please check your input and try again.");
+      } else if (status === 500 && msg && msg !== "Authentication failed") {
+        setError(msg);
       } else if (status === 500 && !isLogin && !isForgotPassword) {
         setError("Registration failed due to a server error. Please try again in a moment.");
       } else if (status === 500) {
