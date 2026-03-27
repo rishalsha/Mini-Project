@@ -1,7 +1,7 @@
 import { User, UserRole } from '../types';
 
-// export const API_BASE = (import.meta as any)?.env?.VITE_API_URL || 'http://localhost:8080';
-export const API_BASE = 'http://localhost:8080';
+export const API_BASE =
+  (import.meta as any)?.env?.VITE_API_URL || '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {

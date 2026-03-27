@@ -11,11 +11,9 @@ import {
   User,
   CandidateProfile,
 } from "./types";
-import { getPortfolioByEmail } from "./services/api";
+import { API_BASE, getPortfolioByEmail } from "./services/api";
 import { Eye, EyeOff, LogOut, User as UserIcon, ArrowLeft } from "lucide-react";
 
-// const API_BASE = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:8080";
-const API_BASE = "http://localhost:8080";
 const API_URL = `${API_BASE}/api/resume`;
 
 const App: React.FC = () => {
@@ -135,7 +133,7 @@ const App: React.FC = () => {
       let errorMessage = error.message || "Something went wrong while processing the resume. Please try again.";
 
       if (errorMessage.includes("Failed to fetch")) {
-        errorMessage = "Cannot connect to the backend server. Please make sure the API is running at http://localhost:8080 and try again.";
+        errorMessage = `Cannot connect to the backend server. Please make sure the API is running at ${API_BASE} and try again.`;
       }
 
       alert(errorMessage);

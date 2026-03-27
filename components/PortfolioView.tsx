@@ -1,6 +1,7 @@
 import React from "react";
 import { PortfolioData, ResumeAnalysis, Skill } from "../types";
 import AnalysisDashboard from "./AnalysisDashboard";
+import { API_BASE } from "../services/api";
 import {
   Github,
   Linkedin,
@@ -59,9 +60,6 @@ const PortfolioView: React.FC<Props> = ({ data, analysis, isEmployerView }) => {
 
   const handleDownloadResume = async () => {
     try {
-      const API_BASE =
-        (import.meta as any)?.env?.VITE_API_URL || "http://localhost:8080";
-
       // Use email-based download to always fetch the latest resume upload
       const downloadUrl = data.email
         ? `${API_BASE}/api/portfolios/by-email/resume?email=${encodeURIComponent(
