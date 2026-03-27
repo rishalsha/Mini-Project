@@ -1,7 +1,10 @@
 import { User, UserRole } from '../types';
 
-export const API_BASE =
-  (import.meta as any)?.env?.VITE_API_URL || '/api';
+const RAW_API_BASE = (import.meta as any)?.env?.VITE_API_URL || '/api';
+
+// Normalize so request builders can safely append /api/... once.
+export const API_BASE = RAW_API_BASE.replace(/\/+$/, '').replace(/\/api$/, '');
+export const API_BASE_DISPLAY = API_BASE || '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {

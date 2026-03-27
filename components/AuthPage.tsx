@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { User, UserRole } from "../types";
 import {
-  API_BASE,
+  API_BASE_DISPLAY,
   loginUser,
   registerUser,
   fetchUserByEmail,
@@ -130,7 +130,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
       } else if (msg.includes("Failed to fetch")) {
         setError(
           "Cannot connect to the backend server. Please make sure the API is running at " +
-          API_BASE
+          API_BASE_DISPLAY
         );
       } else if (status === 409 || msg.includes("Email already registered") || msg.includes("409")) {
         setError("This email is already registered. Please log in instead.");
