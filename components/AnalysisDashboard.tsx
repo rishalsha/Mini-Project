@@ -205,7 +205,6 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis }) => {
                     </a>
                   ) : (
                     <span className="text-sm text-slate-400">
-                      Apply via Company Website
                     </span>
                   )}
                 </div>
