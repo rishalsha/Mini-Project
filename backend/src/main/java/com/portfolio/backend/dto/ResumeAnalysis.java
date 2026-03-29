@@ -63,7 +63,10 @@ public class ResumeAnalysis {
         private String title;
         private String company;
         private String location;
-        private String matchReason;
+        private String salaryRange;
+        private Integer matchScore;
+        private String reason;
+        private String url;
 
         public String getTitle() {
             return title;
@@ -89,12 +92,36 @@ public class ResumeAnalysis {
             this.location = location;
         }
 
-        public String getMatchReason() {
-            return matchReason;
+        public String getSalaryRange() {
+            return salaryRange;
         }
 
-        public void setMatchReason(String matchReason) {
-            this.matchReason = matchReason;
+        public void setSalaryRange(String salaryRange) {
+            this.salaryRange = salaryRange;
+        }
+
+        public Integer getMatchScore() {
+            return matchScore;
+        }
+
+        public void setMatchScore(Integer matchScore) {
+            this.matchScore = matchScore;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 }

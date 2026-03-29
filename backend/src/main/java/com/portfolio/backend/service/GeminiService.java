@@ -346,14 +346,20 @@ public class GeminiService {
                     - For other roles: mention specific cities/regions relevant to their industry
                     - Consider mentioning: 'Remote opportunities available', 'Relocate to tech hub recommended', 'Local opportunities in [their city]'",
                     
-                  "matchReason": "Detailed explanation (3-4 sentences) of why this role is an excellent fit. MUST include:
+                  "salaryRange": "Estimated salary range based on experience level, location, and company type (optional, use null if uncertain)",
+                  
+                  "matchScore": "Integer 1-100 representing how well this role aligns with candidate's profile",
+                  
+                  "reason": "Detailed explanation (3-4 sentences) of why this role is an excellent fit. MUST include:
                     - Specific skills from resume that match job requirements
                     - How their experience level aligns with role expectations
                     - Why this company type suits their background
                     - Growth potential and next career step this enables
                     - Salary range expectations if applicable
                     
-                    Example: 'Your 4 years of React and Node.js experience with demonstrated full-stack projects makes you an ideal candidate for mid-level full-stack roles at growing startups. These companies value your ability to work across the entire stack and ship features independently, which you've proven through your e-commerce platform project. Series B startups typically offer $110K-$140K plus equity for this experience level and provide rapid growth opportunities to senior roles within 1-2 years. Your AWS experience is particularly valuable as these companies are scaling their infrastructure.'"
+                    Example: 'Your 4 years of React and Node.js experience with demonstrated full-stack projects makes you an ideal candidate for mid-level full-stack roles at growing startups. These companies value your ability to work across the entire stack and ship features independently, which you've proven through your e-commerce platform project. Series B startups typically offer $110K-$140K plus equity for this experience level and provide rapid growth opportunities to senior roles within 1-2 years. Your AWS experience is particularly valuable as these companies are scaling their infrastructure.'",
+                  
+                  "url": "URL to apply or learn more (optional, use null if not available)"
                 }
               ]
               Base recommendations on: their actual skills, experience level, career trajectory, location preferences if mentioned, and current market demand.
@@ -366,7 +372,7 @@ public class GeminiService {
             ✓ strengths: 4-6 specific items with resume evidence, NO generic placeholders
             ✓ weaknesses: 4-7 detailed, actionable items with "what, why, how" - NEVER empty
             ✓ marketOutlook: 4-5 sentences with specific market data and recommendations
-            ✓ jobRecommendations: 3-5 entries, each with realistic details and thorough matchReason
+            ✓ jobRecommendations: 3-5 entries with title, company, location, matchScore, reason fields
             ✓ All fields present in exact order specified
             ✓ No null, empty, or generic placeholder values
             ✓ weaknesses array is comprehensive and actionable (CRITICAL REQUIREMENT)
