@@ -73,7 +73,7 @@ const UploadSection: React.FC<Props> = ({
         </h1>
         <p className="text-lg text-slate-600">
           {isEmployer
-            ? "Upload a candidate's resume (PDF) to generate a portfolio view and get AI-powered compatibility analysis."
+            ? "Upload a candidate's resume (PDF) to generate AI-powered compatibility analysis."
             : "Upload your resume (PDF) to generate a professional website and get AI-powered career insights instantly."}
         </p>
       </div>

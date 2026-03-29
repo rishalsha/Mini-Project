@@ -11,7 +11,6 @@ import {
   resetUserPassword,
   resetEmployerPassword,
   loginAdministrator,
-  registerAdministrator,
   fetchAdministratorByEmail,
   resetAdministratorPassword,
 } from "../services/api";
@@ -96,11 +95,10 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
           authed = await fetchEmployerByEmail(email);
           authed.role = "employer";
         } else {
-          if (isLogin) {
-            authed = await loginAdministrator(email, password);
-          } else {
-            authed = await registerAdministrator(name, email, password);
+          if (!isLogin) {
+            throw new Error("Admin signup is disabled. Please use admin login.");
           }
+          authed = await loginAdministrator(email, password);
           authed = await fetchAdministratorByEmail(email);
           authed.role = "administrator";
         }
@@ -245,7 +243,9 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 ? "Enter your email and new password."
                 : isLogin
                   ? "Enter your details to access your account."
-                  : `Sign up as a ${role} to get started.`}
+                  : role === "administrator"
+                    ? "Admin signup is disabled. Please log in with existing admin credentials."
+                    : `Sign up as a ${role} to get started.`}
             </p>
           </div>
 
@@ -415,19 +415,25 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 </button>
               ) : (
                 <>
-                  {isLogin
-                    ? "Don't have an account?"
-                    : "Already have an account?"}
-                  <button
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      setError(null);
-                      setSuccess(null);
-                    }}
-                    className="ml-2 font-bold text-indigo-600 hover:text-indigo-800"
-                  >
-                    {isLogin ? "Sign up" : "Log in"}
-                  </button>
+                  {role === "administrator" ? (
+                    <span>Admin accounts are login-only.</span>
+                  ) : (
+                    <>
+                      {isLogin
+                        ? "Don't have an account?"
+                        : "Already have an account?"}
+                      <button
+                        onClick={() => {
+                          setIsLogin(!isLogin);
+                          setError(null);
+                          setSuccess(null);
+                        }}
+                        className="ml-2 font-bold text-indigo-600 hover:text-indigo-800"
+                      >
+                        {isLogin ? "Sign up" : "Log in"}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </p>

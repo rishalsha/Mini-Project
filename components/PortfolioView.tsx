@@ -466,7 +466,7 @@ const PortfolioView: React.FC<Props> = ({ data, analysis, isEmployerView }) => {
       </section>
 
       {/* Analysis Section (Private View Only) */}
-      {!isEmployerView && analysis && <AnalysisDashboard analysis={analysis} />}
+      {analysis && <AnalysisDashboard analysis={analysis} />}
 
       {/* Footer */}
       <footer

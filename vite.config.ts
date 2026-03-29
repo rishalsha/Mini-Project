@@ -5,9 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:8080';
+  const port = parseInt(process.env.PORT || env.PORT || '3500', 10);
   return {
     server: {
-      port: 3500,
+      port: port,
       host: '0.0.0.0',
       proxy: {
         '/api': {

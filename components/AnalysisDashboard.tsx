@@ -44,7 +44,7 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis }) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div >
           {/* Column 1: Score & Market Outlook */}
           <div className="space-y-8">
             {/* Score Card */}

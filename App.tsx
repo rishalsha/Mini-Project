@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import UploadSection from "./components/UploadSection";
 import PortfolioView from "./components/PortfolioView";
+import AnalysisDashboard from "./components/AnalysisDashboard";
 import AuthPage from "./components/AuthPage";
 import EmployerDashboard from "./components/EmployerDashboard";
 import AdminDashboard from "./components/AdminDashboard";
@@ -23,7 +24,9 @@ const App: React.FC = () => {
     null
   );
   const [analysisData, setAnalysisData] = useState<ResumeAnalysis | null>(null);
+  const [screenedResumeAnalysis, setScreenedResumeAnalysis] = useState<ResumeAnalysis | null>(null);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -66,7 +69,14 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleUpload = async (content: string, mimeType: string) => {
+    // Save current portfolio in case upload fails (for candidates)
+    const previousPortfolio = portfolioData;
+    const previousAnalysis = analysisData;
+    const isEmployerScreening = user?.role === "employer";
+    
     setViewMode("analyzing");
+    setUploadError(null);
+    
     try {
       const formData = new FormData();
 
@@ -89,8 +99,9 @@ const App: React.FC = () => {
         formData.append("file", blob, filename);
       }
 
-      // Add user email to form data for validation
-      if (user?.email) {
+      // Add user email only for candidates (not for employer screening)
+      // Employers screen resumes anonymously without user association
+      if (user?.email && user?.role === "candidate") {
         formData.append("userEmail", user.email);
       }
 
@@ -109,25 +120,39 @@ const App: React.FC = () => {
       }
 
       const data = await response.json();
-      const portfolio = data.portfolio;
       const analysis = data.analysis;
 
-      // Validate response before setting state
-      if (
-        !portfolio ||
-        !portfolio.fullName ||
-        portfolio.fullName.trim() === ""
-      ) {
+      // Validate analysis was generated
+      if (!analysis) {
         throw new Error(
-          "Failed to parse resume properly. The AI service may be unavailable. Please verify Gemini API configuration and try again."
+          "Failed to analyze resume. The AI service may be unavailable. Please verify Gemini API configuration and try again."
         );
       }
 
-      setPortfolioData(portfolio);
-      setAnalysisData(analysis);
-
-      // For candidates show their portfolio view; employers just screen
-      setViewMode("portfolio");
+      if (isEmployerScreening) {
+        // For employers: Show analysis-only view without portfolio data
+        setScreenedResumeAnalysis(analysis);
+        setUploadError(null);
+        setViewMode("screen-resume");
+      } else {
+        // For candidates: Show full portfolio view
+        const portfolio = data.portfolio;
+        
+        if (
+          !portfolio ||
+          !portfolio.fullName ||
+          portfolio.fullName.trim() === ""
+        ) {
+          throw new Error(
+            "Failed to parse resume properly. The AI service may be unavailable. Please verify Gemini API configuration and try again."
+          );
+        }
+        
+        setPortfolioData(portfolio);
+        setAnalysisData(analysis);
+        setUploadError(null);
+        setViewMode("portfolio");
+      }
     } catch (error: any) {
       console.error("Error processing resume:", error);
       let errorMessage = error.message || "Something went wrong while processing the resume. Please try again.";
@@ -136,8 +161,21 @@ const App: React.FC = () => {
         errorMessage = `Cannot connect to the backend server. Please make sure the API is running at ${API_BASE_DISPLAY} and try again.`;
       }
 
-      alert(errorMessage);
-      setViewMode("upload");
+      setUploadError(errorMessage);
+      
+      if (isEmployerScreening) {
+        // For employers, go back to upload on error
+        setViewMode("upload");
+      } else {
+        // For candidates, restore previous portfolio if exists
+        if (previousPortfolio) {
+          setPortfolioData(previousPortfolio);
+          setAnalysisData(previousAnalysis);
+          setViewMode("portfolio");
+        } else {
+          setViewMode("upload");
+        }
+      }
     }
   };
 
@@ -151,6 +189,8 @@ const App: React.FC = () => {
     setUser(null);
     setPortfolioData(null);
     setAnalysisData(null);
+    setScreenedResumeAnalysis(null);
+    setUploadError(null);
     setViewMode("upload");
   };
 
@@ -314,6 +354,29 @@ const App: React.FC = () => {
           canViewPortfolio={!!portfolioData && user.role === "candidate"}
           onViewPortfolio={() => setViewMode("portfolio")}
         />
+      )}
+
+      {/* Employer Resume Screening - Analysis Only */}
+      {viewMode === "screen-resume" && screenedResumeAnalysis && (
+        <div className="min-h-screen bg-slate-50">
+          {/* Back Button */}
+          <div className="fixed top-6 left-6 z-50">
+            <button
+              onClick={() => {
+                setScreenedResumeAnalysis(null);
+                setViewMode("employer-dashboard");
+              }}
+              className="bg-white/90 backdrop-blur rounded-full px-4 py-2 shadow-sm border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft size={16} /> Back to Dashboard
+            </button>
+          </div>
+
+          {/* Analysis Results */}
+          <div className="pt-8">
+            <AnalysisDashboard analysis={screenedResumeAnalysis} />
+          </div>
+        </div>
       )}
 
       {(viewMode === "portfolio" || viewMode === "employer") &&

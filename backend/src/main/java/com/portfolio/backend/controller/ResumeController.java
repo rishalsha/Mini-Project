@@ -132,30 +132,36 @@ public class ResumeController {
             response.setPortfolio(portfolio);
             response.setAnalysis(analysis);
 
-            // Save to PostgreSQL database
-            System.out.println("Saving portfolio to database...");
-            Portfolio savedPortfolio = portfolioService.savePortfolio(response, resumeFile);
-            System.out.println("Portfolio saved with ID: " + savedPortfolio.getId());
+            // Save to database ONLY if userEmail is provided (candidate workflow)
+            // For employer screening (no userEmail), just return analysis without saving
+            if (userEmail != null && !userEmail.trim().isEmpty()) {
+                System.out.println("Saving portfolio to database...");
+                Portfolio savedPortfolio = portfolioService.savePortfolio(response, resumeFile);
+                System.out.println("Portfolio saved with ID: " + savedPortfolio.getId());
 
-            // Set the saved portfolio ID in the response
-            portfolio.setId(savedPortfolio.getId());
-            response.setPortfolio(portfolio);
+                // Set the saved portfolio ID in the response
+                portfolio.setId(savedPortfolio.getId());
+                response.setPortfolio(portfolio);
 
-            // Persist analysis per user (if available)
-            userRepository.findByEmail(portfolio.getEmail()).ifPresent(user -> {
-                ResumeAnalysisEntity ra = new ResumeAnalysisEntity();
-                ra.setUser(user);
-                ra.setResumeText(resumeText);
-                ra.setAnalysisScores("{\"overall\":" + (analysis.getScore() == null ? 0 : analysis.getScore()) + "}");
-                ra.setStrengths(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
-                        .valueToTree(analysis.getStrengths()).toString());
-                ra.setWeaknesses(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
-                        .valueToTree(analysis.getWeaknesses()).toString());
-                ra.setIdentifiedSkills(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
-                        .valueToTree(portfolio.getSkills()).toString());
-                ra.setRecommendedSkills("[]");
-                resumeAnalysisRepository.save(ra);
-            });
+                // Persist analysis per user
+                userRepository.findByEmail(portfolio.getEmail()).ifPresent(user -> {
+                    ResumeAnalysisEntity ra = new ResumeAnalysisEntity();
+                    ra.setUser(user);
+                    ra.setResumeText(resumeText);
+                    ra.setAnalysisScores("{\"overall\":" + (analysis.getScore() == null ? 0 : analysis.getScore()) + "}");
+                    ra.setStrengths(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                            .valueToTree(analysis.getStrengths()).toString());
+                    ra.setWeaknesses(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                            .valueToTree(analysis.getWeaknesses()).toString());
+                    ra.setIdentifiedSkills(com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                            .valueToTree(portfolio.getSkills()).toString());
+                    ra.setRecommendedSkills("[]");
+                    resumeAnalysisRepository.save(ra);
+                });
+            } else {
+                // Employer screening mode - just return analysis, don't save
+                System.out.println("Employer screening mode - returning analysis only (no database save)");
+            }
 
             return ResponseEntity.ok(response);
 

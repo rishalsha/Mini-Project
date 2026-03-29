@@ -77,4 +77,4 @@ export interface CandidateProfile {
   lastUpdated: string;
 }
 
-export type ViewMode = 'upload' | 'analyzing' | 'portfolio' | 'employer' | 'employer-dashboard' | 'admin-dashboard';
+export type ViewMode = 'upload' | 'analyzing' | 'portfolio' | 'employer' | 'employer-dashboard' | 'admin-dashboard' | 'screen-resume';

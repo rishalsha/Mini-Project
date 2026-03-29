@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 backend/target
+
+# Environment files (secrets)
+.env
+.env.*
+backend/.env
+backend/.env.*
+!.env.example
+!backend/.env.example
