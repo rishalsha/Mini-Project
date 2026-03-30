@@ -12,7 +12,15 @@ import {
   User,
   CandidateProfile,
 } from "./types";
-import { API_BASE, API_BASE_DISPLAY, getPortfolioByEmail } from "./services/api";
+import {
+  API_BASE,
+  API_BASE_DISPLAY,
+  getPortfolioByEmail,
+  fetchUserByEmail,
+  fetchEmployerByEmail,
+  fetchAdministratorByEmail,
+} from "./services/api";
+import { clearSession, loadSession, saveSession } from "./services/session";
 import { Eye, EyeOff, LogOut, User as UserIcon, ArrowLeft } from "lucide-react";
 
 const API_URL = `${API_BASE}/api/resume`;
@@ -27,6 +35,44 @@ const App: React.FC = () => {
   const [screenedResumeAnalysis, setScreenedResumeAnalysis] = useState<ResumeAnalysis | null>(null);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [restoringSession, setRestoringSession] = useState(true);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const stored = loadSession();
+      if (!stored) {
+        setRestoringSession(false);
+        return;
+      }
+
+      try {
+        let refreshed: User | null = null;
+        if (stored.role === "candidate") {
+          refreshed = await fetchUserByEmail(stored.email);
+          refreshed.role = "candidate";
+        } else if (stored.role === "employer") {
+          refreshed = await fetchEmployerByEmail(stored.email);
+          refreshed.role = "employer";
+        } else {
+          refreshed = await fetchAdministratorByEmail(stored.email);
+          refreshed.role = "administrator";
+        }
+
+        if (refreshed) {
+          setUser(refreshed);
+          saveSession(refreshed);
+        } else {
+          clearSession();
+        }
+      } catch {
+        clearSession();
+      } finally {
+        setRestoringSession(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -111,12 +157,15 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
+        const status = response.status;
         const errorData = await response.json().catch(() => null);
         const errorMessage =
           errorData?.message ||
           errorData?.error ||
-          `Server error: ${response.status}`;
-        throw new Error(errorMessage);
+          `Server error: ${status}`;
+        const apiError = new Error(errorMessage) as Error & { status?: number };
+        apiError.status = status;
+        throw apiError;
       }
 
       const data = await response.json();
@@ -147,6 +196,12 @@ const App: React.FC = () => {
             "Failed to parse resume properly. The AI service may be unavailable. Please verify Gemini API configuration and try again."
           );
         }
+
+        if (isPortfolioEmpty(portfolio)) {
+          throw new Error(
+            "Resume parsing returned no usable data. This can happen when Gemini key is invalid, quota is exceeded, or the request is rate-limited. Please retry after fixing API access."
+          );
+        }
         
         setPortfolioData(portfolio);
         setAnalysisData(analysis);
@@ -156,6 +211,20 @@ const App: React.FC = () => {
     } catch (error: any) {
       console.error("Error processing resume:", error);
       let errorMessage = error.message || "Something went wrong while processing the resume. Please try again.";
+      const status = error?.status;
+      const hasSpecificBackendMessage =
+        !!errorMessage &&
+        !errorMessage.toLowerCase().startsWith("server error:");
+
+      if (status === 401 && !hasSpecificBackendMessage) {
+        errorMessage = "Gemini API key is invalid or missing. Please update GEMINI_API_KEY and try again.";
+      } else if (status === 429 && !hasSpecificBackendMessage) {
+        errorMessage = "Gemini request limit reached (quota/rate-limit). Please wait a bit and retry.";
+      } else if (status === 502 && !hasSpecificBackendMessage) {
+        errorMessage = "Gemini returned an invalid or blocked response. Please retry in a moment.";
+      } else if (status === 503 && !hasSpecificBackendMessage) {
+        errorMessage = "Gemini service is temporarily unavailable. Please try again shortly.";
+      }
 
       if (errorMessage.includes("Failed to fetch")) {
         errorMessage = `Cannot connect to the backend server. Please make sure the API is running at ${API_BASE_DISPLAY} and try again.`;
@@ -186,12 +255,18 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    clearSession();
     setUser(null);
     setPortfolioData(null);
     setAnalysisData(null);
     setScreenedResumeAnalysis(null);
     setUploadError(null);
     setViewMode("upload");
+  };
+
+  const handleLogin = (loggedInUser: User) => {
+    saveSession(loggedInUser);
+    setUser(loggedInUser);
   };
 
   const toggleView = () => {
@@ -252,9 +327,20 @@ const App: React.FC = () => {
     }
   };
 
+  if (restoringSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="text-sm font-medium">Restoring your session...</p>
+        </div>
+      </div>
+    );
+  }
+
   // If not logged in, show Auth Page
   if (!user) {
-    return <AuthPage onLogin={setUser} />;
+    return <AuthPage onLogin={handleLogin} />;
   }
 
   // While fetching existing portfolio for candidate, show minimal loader
@@ -351,6 +437,7 @@ const App: React.FC = () => {
           onUpload={handleUpload}
           isLoading={viewMode === "analyzing"}
           isEmployer={user.role === "employer"}
+          errorMessage={uploadError}
           canViewPortfolio={!!portfolioData && user.role === "candidate"}
           onViewPortfolio={() => setViewMode("portfolio")}
         />

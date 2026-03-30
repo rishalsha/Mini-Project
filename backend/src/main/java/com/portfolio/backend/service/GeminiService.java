@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -174,25 +175,7 @@ public class GeminiService {
     } catch (Exception e) {
       System.err.println("Error parsing resume: " + e.getMessage());
       e.printStackTrace();
-      // Graceful fallback: return a minimal PortfolioData derived from plain text
-      PortfolioData fallback = new PortfolioData();
-      // Try to infer email and name rudimentarily
-      String email = inferEmail(resumeText);
-      String name = inferName(resumeText);
-      fallback.setEmail(email);
-      fallback.setFullName(name != null ? name : "Unknown");
-      fallback.setHeadline("Resume");
-      fallback.setAbout(resumeText.length() > 400 ? resumeText.substring(0, 400) + "..." : resumeText);
-      fallback.setLocation("");
-      fallback.setPhone("");
-      fallback.setLinkedin("");
-      fallback.setGithub("");
-      fallback.setWebsite("");
-      fallback.setSkills(new java.util.ArrayList<>());
-      fallback.setExperience(new java.util.ArrayList<>());
-      fallback.setEducation(new java.util.ArrayList<>());
-      fallback.setProjects(new java.util.ArrayList<>());
-      return fallback;
+      throw new RuntimeException(classifyGeminiFailure(e), e);
     }
   }
 
@@ -391,7 +374,7 @@ public class GeminiService {
     } catch (Exception e) {
       System.err.println("Error analyzing resume: " + e.getMessage());
       e.printStackTrace();
-      return buildHeuristicAnalysis(resumeText);
+      throw new RuntimeException(classifyGeminiFailure(e), e);
     }
   }
 
@@ -444,11 +427,17 @@ public class GeminiService {
 
     String endpoint = String.format("%s/%s:generateContent?key=%s", GEMINI_API_BASE, geminiModel, geminiApiKey);
 
-    ResponseEntity<String> response = restTemplate.exchange(
-        endpoint,
-        HttpMethod.POST,
-        entity,
-        String.class);
+    ResponseEntity<String> response;
+    try {
+      response = restTemplate.exchange(
+          endpoint,
+          HttpMethod.POST,
+          entity,
+          String.class);
+    } catch (RestClientResponseException ex) {
+      String body = ex.getResponseBodyAsString();
+      throw new Exception("Gemini API HTTP " + ex.getRawStatusCode() + ": " + (body == null ? ex.getMessage() : body), ex);
+    }
 
     if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
       JsonNode jsonNode = objectMapper.readTree(response.getBody());
@@ -472,6 +461,60 @@ public class GeminiService {
     }
 
     throw new Exception("Failed to get response from Gemini");
+  }
+
+  private String classifyGeminiFailure(Throwable throwable) {
+    Throwable cursor = throwable;
+    while (cursor != null) {
+      String msg = cursor.getMessage();
+      if (msg != null) {
+        String m = msg.toLowerCase();
+
+        if (m.contains("missing gemini api key") ||
+            m.contains("api key not valid") ||
+            m.contains("api_key_invalid") ||
+            m.contains("invalid api key") ||
+            m.contains("permission_denied")) {
+          return "Gemini API key is invalid or missing. Update GEMINI_API_KEY and try again.";
+        }
+
+        if (m.contains("api key expired") ||
+            m.contains("api_key_expired") ||
+            m.contains("please renew the api key")) {
+          return "API key expired. Please renew the API key.";
+        }
+
+        if (m.contains("resource_exhausted") ||
+            m.contains("quota") ||
+            m.contains("rate limit") ||
+            m.contains("429")) {
+          return "Gemini request limit reached (quota/rate-limit). Please wait and retry.";
+        }
+
+        if (m.contains("blocked the request") || m.contains("safety")) {
+          return "Gemini blocked this request due to safety policy. Please adjust resume content and retry.";
+        }
+
+        if (m.contains("empty or missing candidate text") ||
+            m.contains("no valid json") ||
+            m.contains("invalid json")) {
+          return "Gemini returned an invalid response. Please retry in a moment.";
+        }
+
+        if (m.contains("failed to get response") ||
+            m.contains("timed out") ||
+            m.contains("unavailable") ||
+            m.contains("5xx") ||
+            m.contains("http 500") ||
+            m.contains("http 502") ||
+            m.contains("http 503") ||
+            m.contains("http 504")) {
+          return "Gemini service is temporarily unavailable. Please try again shortly.";
+        }
+      }
+      cursor = cursor.getCause();
+    }
+    return "Resume analysis failed due to an AI service error. Please try again.";
   }
 
   private <T> T parseJsonResponse(String text, Class<T> clazz) throws Exception {

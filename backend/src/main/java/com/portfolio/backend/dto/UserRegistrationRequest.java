@@ -22,7 +22,6 @@ public class UserRegistrationRequest {
     @Pattern(regexp = "^(?=\\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,64}$", message = "Password must include uppercase, lowercase, number, and special character, and must not contain spaces")
     private String password;
 
-    @NotBlank(message = "Firebase ID token is required")
     private String firebaseIdToken;
 
     @Size(max = 255, message = "Resume file path must be at most 255 characters")

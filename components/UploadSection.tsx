@@ -11,6 +11,7 @@ interface Props {
   onUpload: (content: string, mimeType: string) => void;
   isLoading: boolean;
   isEmployer?: boolean;
+  errorMessage?: string | null;
   canViewPortfolio?: boolean;
   onViewPortfolio?: () => void;
 }
@@ -19,6 +20,7 @@ const UploadSection: React.FC<Props> = ({
   onUpload,
   isLoading,
   isEmployer,
+  errorMessage,
   canViewPortfolio,
   onViewPortfolio,
 }) => {
@@ -76,6 +78,11 @@ const UploadSection: React.FC<Props> = ({
             ? "Upload a candidate's resume (PDF) to generate AI-powered compatibility analysis."
             : "Upload your resume (PDF) to generate a professional website and get AI-powered career insights instantly."}
         </p>
+        {errorMessage && (
+          <div className="mt-4 text-left bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            {errorMessage}
+          </div>
+        )}
       </div>
 
       <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">

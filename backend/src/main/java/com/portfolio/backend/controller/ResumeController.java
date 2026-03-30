@@ -168,11 +168,21 @@ public class ResumeController {
         } catch (Exception e) {
             System.err.println("Error processing resume: " + e.getMessage());
             e.printStackTrace();
-            // Return a proper error response
-            ErrorResponse error = new ErrorResponse(
-                    "Unable to process resume. Please verify Gemini API configuration and try again. Error: "
-                            + e.getMessage());
-            return ResponseEntity.status(503).body(error);
+
+            String message = e.getMessage() == null ? "Unable to process resume." : e.getMessage();
+            String normalized = message.toLowerCase();
+            int status = 503;
+
+            if (normalized.contains("invalid or missing") || normalized.contains("api key")) {
+                status = 401;
+            } else if (normalized.contains("quota") || normalized.contains("rate-limit") || normalized.contains("rate limit") || normalized.contains("resource_exhausted")) {
+                status = 429;
+            } else if (normalized.contains("invalid response") || normalized.contains("blocked") || normalized.contains("safety")) {
+                status = 502;
+            }
+
+            ErrorResponse error = new ErrorResponse(message);
+            return ResponseEntity.status(status).body(error);
         }
     }
 

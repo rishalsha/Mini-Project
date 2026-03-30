@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,6 +30,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest request) {
         try {
+            if (request.getFirebaseIdToken() == null || request.getFirebaseIdToken().isBlank()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Firebase ID token is required"));
+            }
             firebaseIdentityService.assertVerifiedIdentity(request.getFirebaseIdToken(), request.getEmail());
             User user = userService.register(
                     request.getName().trim(),
@@ -50,12 +54,40 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody Map<String, String> body) {
-        String email = body.getOrDefault("email", "");
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+        String email = body.getOrDefault("email", "").trim().toLowerCase();
         String password = body.getOrDefault("password", "");
-        if (email.isEmpty() || password.isEmpty()) {
+        String firebaseIdToken = body.getOrDefault("firebaseIdToken", "");
+        String name = body.getOrDefault("name", "").trim();
+
+        if (email.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+
+        if (!firebaseIdToken.isEmpty()) {
+            try {
+                firebaseIdentityService.assertVerifiedIdentity(firebaseIdToken, email);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            } catch (IllegalStateException e) {
+                return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            }
+
+            Optional<User> existing = userService.findByEmail(email);
+            if (existing.isPresent()) {
+                return ResponseEntity.ok(existing.get());
+            }
+
+            String resolvedName = name.isBlank() ? email.split("@")[0] : name;
+            String generatedPassword = UUID.randomUUID() + "Aa1!";
+            User created = userService.register(resolvedName, email, generatedPassword, null);
+            return ResponseEntity.ok(created);
+        }
+
+        if (password.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Optional<User> user = userService.login(email, password);
         return user.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(401).build());

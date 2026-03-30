@@ -40,6 +40,21 @@ mvn spring-boot:run
 
 Backend will start on http://localhost:8080
 
+## Seed Admin User
+
+You can create an administrator directly using the helper script:
+
+```bash
+cd backend
+./seed-admin.sh
+```
+
+Edit these values at the top of `backend/seed-admin.sh` before running:
+
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+
 ## API Endpoints
 
 ### Parse Resume

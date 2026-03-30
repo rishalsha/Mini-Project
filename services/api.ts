@@ -40,21 +40,31 @@ function mapUser(raw: any, role: UserRole): User {
   };
 }
 
-export async function loginUser(email: string, password: string): Promise<User> {
+export async function loginUser(
+  email: string,
+  password: string,
+  firebaseIdToken?: string,
+  name?: string
+): Promise<User> {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, firebaseIdToken, name })
   });
   const data = await handleResponse<any>(res);
   return mapUser(data, 'candidate');
 }
 
-export async function registerUser(name: string, email: string, password: string): Promise<User> {
+export async function registerUser(
+  name: string,
+  email: string,
+  password: string,
+  firebaseIdToken?: string
+): Promise<User> {
   const res = await fetch(`${API_BASE}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password })
+    body: JSON.stringify({ name, email, password, firebaseIdToken })
   });
   const data = await handleResponse<any>(res);
   return mapUser(data, 'candidate');
@@ -66,21 +76,33 @@ export async function fetchUserByEmail(email: string): Promise<User> {
   return mapUser(data, 'candidate');
 }
 
-export async function loginEmployer(email: string, password: string): Promise<User> {
+export async function loginEmployer(
+  email: string,
+  password: string,
+  firebaseIdToken?: string,
+  name?: string,
+  companyName?: string
+): Promise<User> {
   const res = await fetch(`${API_BASE}/api/employer/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, firebaseIdToken, name, companyName })
   });
   const data = await handleResponse<any>(res);
   return mapUser(data, 'employer');
 }
 
-export async function registerEmployer(name: string, email: string, password: string, companyName?: string): Promise<User> {
+export async function registerEmployer(
+  name: string,
+  email: string,
+  password: string,
+  companyName?: string,
+  firebaseIdToken?: string
+): Promise<User> {
   const res = await fetch(`${API_BASE}/api/employer/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password, companyName })
+    body: JSON.stringify({ name, email, password, companyName, firebaseIdToken })
   });
   const data = await handleResponse<any>(res);
   return mapUser(data, 'employer');

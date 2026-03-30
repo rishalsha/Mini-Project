@@ -3,17 +3,18 @@ import { User, UserRole } from "../types";
 import {
   API_BASE_DISPLAY,
   loginUser,
-  registerUser,
   fetchUserByEmail,
   loginEmployer,
-  registerEmployer,
   fetchEmployerByEmail,
-  resetUserPassword,
-  resetEmployerPassword,
   loginAdministrator,
   fetchAdministratorByEmail,
   resetAdministratorPassword,
 } from "../services/api";
+import {
+  firebaseLoginVerified,
+  firebaseRegisterWithVerification,
+  firebaseSendReset,
+} from "../services/firebase";
 import {
   Briefcase,
   User as UserIcon,
@@ -39,6 +40,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const isFirebaseManagedRole = role === "candidate" || role === "employer";
 
   const validatePassword = (pwd: string): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
@@ -62,14 +64,13 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
 
     try {
       if (isForgotPassword) {
-        if (role === "candidate") {
-          await resetUserPassword(email, password);
-        } else if (role === "employer") {
-          await resetEmployerPassword(email, password);
+        if (isFirebaseManagedRole) {
+          await firebaseSendReset(email);
+          setSuccess("Password reset link sent. Check your email inbox.");
         } else {
           await resetAdministratorPassword(email, password);
+          setSuccess("Password updated successfully. You can now log in.");
         }
-        setSuccess("Password updated successfully. You can now log in.");
         setIsForgotPassword(false);
         setIsLogin(true);
         return;
@@ -78,9 +79,13 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
       let authed: User | null = null;
       if (role === "candidate") {
         if (isLogin) {
-          authed = await loginUser(email, password);
+          const { idToken } = await firebaseLoginVerified(email, password);
+          authed = await loginUser(email, password, idToken, name || undefined);
         } else {
-          authed = await registerUser(name, email, password);
+          await firebaseRegisterWithVerification(email, password);
+          setSuccess("Verification email sent. Verify your email, then log in.");
+          setIsLogin(true);
+          return;
         }
         // Ensure we have the latest user data with the correct name
         authed = await fetchUserByEmail(email);
@@ -88,9 +93,13 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
       } else {
         if (role === "employer") {
           if (isLogin) {
-            authed = await loginEmployer(email, password);
+            const { idToken } = await firebaseLoginVerified(email, password);
+            authed = await loginEmployer(email, password, idToken, name || undefined);
           } else {
-            authed = await registerEmployer(name, email, password);
+            await firebaseRegisterWithVerification(email, password);
+            setSuccess("Verification email sent. Verify your email, then log in.");
+            setIsLogin(true);
+            return;
           }
           authed = await fetchEmployerByEmail(email);
           authed.role = "employer";
@@ -133,7 +142,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
       } else if (status === 409 || msg.includes("Email already registered") || msg.includes("409")) {
         setError("This email is already registered. Please log in instead.");
       } else if (status === 401 || msg.includes("401")) {
-        setError("Invalid email or password.");
+        setError(msg.includes("verified") ? msg : "Invalid email or password.");
       } else if (status === 404 && isForgotPassword) {
         setError(`No ${role} account found with this email.`);
       } else if (status === 400) {
@@ -211,19 +220,21 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                   }`}
               >
                 <Briefcase size={18} /> Employer
-              </button>
-              <button
-                onClick={() => {
-                  setRole("administrator");
-                  setError(null);
-                }}
-                className={`flex-1 min-w-0 py-3 px-2 md:px-3 rounded-xl text-xs md:text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 md:gap-2 ${role === "administrator"
-                  ? "bg-white text-slate-900 border-white"
-                  : "bg-transparent text-slate-400 border-slate-700 hover:border-slate-600"
-                  }`}
-              >
-                <Shield size={18} /> Admin
-              </button>
+              </button> 
+              {(isLogin || isForgotPassword) && (
+                <button
+                  onClick={() => {
+                    setRole("administrator");
+                    setError(null);
+                  }}
+                  className={`flex-1 min-w-0 py-3 px-2 md:px-3 rounded-xl text-xs md:text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 md:gap-2 ${role === "administrator"
+                    ? "bg-white text-slate-900 border-white"
+                    : "bg-transparent text-slate-400 border-slate-700 hover:border-slate-600"
+                    }`}
+                >
+                  <Shield size={18} /> Admin
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -240,7 +251,9 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             </h3>
             <p className="text-slate-500">
               {isForgotPassword
-                ? "Enter your email and new password."
+                ? isFirebaseManagedRole
+                  ? "Enter your email to receive a Firebase reset link."
+                  : "Enter your email and new password."
                 : isLogin
                   ? "Enter your details to access your account."
                   : role === "administrator"
@@ -306,9 +319,10 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
               </div>
             </div>
 
+            {(!isForgotPassword || !isFirebaseManagedRole) && (
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                {isForgotPassword ? "New Password" : "Password"}
+                {isForgotPassword && role === "administrator" ? "New Password" : "Password"}
               </label>
               <div className="relative">
                 <Lock
@@ -317,7 +331,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 />
                 <input
                   type="password"
-                  required
+                  required={!isForgotPassword || role === "administrator"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-lg focus:ring-2 focus:border-indigo-500 outline-none transition-all text-slate-900 ${
@@ -362,6 +376,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 </div>
               )}
             </div>
+            )}
 
             {isLogin && (
               <div className="flex justify-end">
@@ -392,7 +407,9 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
               {loading
                 ? "Please wait..."
                 : isForgotPassword
-                  ? "Reset Password"
+                  ? isFirebaseManagedRole
+                    ? "Send Reset Link"
+                    : "Reset Password"
                   : isLogin
                     ? "Sign In"
                     : "Create Account"}{" "}
