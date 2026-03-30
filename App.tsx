@@ -12,6 +12,7 @@ import {
   User,
   CandidateProfile,
 } from "./types";
+// TEMP: Debug Vite env loading
 import {
   API_BASE,
   API_BASE_DISPLAY,
