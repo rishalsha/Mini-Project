@@ -2,6 +2,7 @@ package com.portfolio.backend.controller;
 
 import com.portfolio.backend.dto.UserRegistrationRequest;
 import com.portfolio.backend.entity.User;
+import com.portfolio.backend.service.FirebaseIdentityService;
 import com.portfolio.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,20 +19,27 @@ import java.util.Optional;
 public class AuthController {
 
     private final UserService userService;
+    private final FirebaseIdentityService firebaseIdentityService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, FirebaseIdentityService firebaseIdentityService) {
         this.userService = userService;
+        this.firebaseIdentityService = firebaseIdentityService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest request) {
         try {
+            firebaseIdentityService.assertVerifiedIdentity(request.getFirebaseIdToken(), request.getEmail());
             User user = userService.register(
                     request.getName().trim(),
                     request.getEmail().trim().toLowerCase(),
                     request.getPassword(),
                     request.getResumeFilePath());
             return ResponseEntity.ok(user);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("unique constraint") ||
                     e.getMessage() != null && e.getMessage().contains("already exists")) {

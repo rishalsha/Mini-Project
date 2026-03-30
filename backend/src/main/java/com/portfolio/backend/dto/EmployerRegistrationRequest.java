@@ -22,6 +22,9 @@ public class EmployerRegistrationRequest {
     @Pattern(regexp = "^(?=\\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,64}$", message = "Password must include uppercase, lowercase, number, and special character, and must not contain spaces")
     private String password;
 
+    @NotBlank(message = "Firebase ID token is required")
+    private String firebaseIdToken;
+
     @Size(max = 100, message = "Company name must be at most 100 characters")
     private String companyName;
 
@@ -55,5 +58,13 @@ public class EmployerRegistrationRequest {
 
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
+    }
+
+    public String getFirebaseIdToken() {
+        return firebaseIdToken;
+    }
+
+    public void setFirebaseIdToken(String firebaseIdToken) {
+        this.firebaseIdToken = firebaseIdToken;
     }
 }

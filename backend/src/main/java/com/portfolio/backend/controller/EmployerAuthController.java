@@ -3,6 +3,7 @@ package com.portfolio.backend.controller;
 import com.portfolio.backend.dto.EmployerRegistrationRequest;
 import com.portfolio.backend.entity.Employer;
 import com.portfolio.backend.service.EmployerService;
+import com.portfolio.backend.service.FirebaseIdentityService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,20 +19,27 @@ import java.util.Optional;
 public class EmployerAuthController {
 
     private final EmployerService employerService;
+    private final FirebaseIdentityService firebaseIdentityService;
 
-    public EmployerAuthController(EmployerService employerService) {
+    public EmployerAuthController(EmployerService employerService, FirebaseIdentityService firebaseIdentityService) {
         this.employerService = employerService;
+        this.firebaseIdentityService = firebaseIdentityService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody EmployerRegistrationRequest request) {
         try {
+            firebaseIdentityService.assertVerifiedIdentity(request.getFirebaseIdToken(), request.getEmail());
             Employer employer = employerService.register(
                     request.getName().trim(),
                     request.getEmail().trim().toLowerCase(),
                     request.getPassword(),
                     request.getCompanyName());
             return ResponseEntity.ok(employer);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             if ((e.getMessage() != null && e.getMessage().contains("unique constraint")) ||
                     (e.getMessage() != null && e.getMessage().contains("already exists"))) {
